@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Globaticket</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      color: #333;
+    }
+    #event-list {
+      margin-top: 20px;
+    }
+    .event-card {
+      background: #fff;
+      padding: 20px;
+      margin: 10px 0;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .event-card h3 {
+      color: #2e3d49;
+    }
+    .event-card p {
+      color: #555;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Globaticket - Find Events</h1>
+  <div>
+    <label for="city">Enter City: </label>
+    <input type="text" id="city" name="city" placeholder="Enter city name...">
+    <button onclick="getEvents()">Search</button>
+  </div>
+
+  <div id="event-list"></div>
+  <div id="error-message" class="error"></div>
+
+  <script>
+    // Function to get events based on city input
+    async function getEvents() {
+      const city = document.getElementById('city').value.trim();
+      const errorMessage = document.getElementById('error-message');
+      const eventList = document.getElementById('event-list');
+
+      // Clear previous error messages or event results
+      errorMessage.textContent = '';
+      eventList.innerHTML = '';
+
+      if (!city) {
+        errorMessage.textContent = 'Please enter a city name!';
+        return;
+      }
+
+      try {
+        // Send request to backend API
+        const response = await fetch(`http://127.0.0.1:5000/events?city=${city}`);
+
+        // Check if the response is successful
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data._embedded && data._embedded.events) {
+            displayEvents(data._embedded.events);
+          } else {
+            errorMessage.textContent = 'No events found for this city.';
+          }
+        } else {
+          errorMessage.textContent = 'Failed to fetch events. Please try again later.';
+        }
+      } catch (error) {
+        errorMessage.textContent = 'Error fetching events: ' + error.message;
+      }
+    }
+
+    // Function to display events on the page
+    function displayEvents(events) {
+      const eventList = document.getElementById('event-list');
+      events.forEach(event => {
+        const eventCard = document.createElement('div');
+        eventCard.classList.add('event-card');
+
+        const eventName = event.name || 'No event name';
+        const eventDate = event.dates?.start?.localDate || 'No date available';
+        const eventVenue = event._embedded?.venues?.[0]?.name || 'Venue not available';
+        const eventUrl = event.url || '#';
+
+        eventCard.innerHTML = `
+          <h3><a href="${eventUrl}" target="_blank">${eventName}</a></h3>
+          <p><strong>Date:</strong> ${eventDate}</p>
+          <p><strong>Venue:</strong> ${eventVenue}</p>
+        `;
+
+        eventList.appendChild(eventCard);
+      });
+    }
+  </script>
+</body>
+</html>
